@@ -1,0 +1,49 @@
+version: "3.8"
+services:
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_ms_retail_project
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=pass1
+    volumes:
+      - mongodb-data-ms-retail-project:/data/db
+
+
+  redis:
+    image: redis
+    container_name: redis_ms_retail_project
+    #restart: always
+    ports:
+      - '6385:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass 1
+    volumes:
+      - redis-cache-local-ms-retail-project:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq_ms_retail_project
+    ports:
+      - "5672:5672"  # RabbitMQ broker port
+      - "15672:15672"  # RabbitMQ management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data-ms-retail-project:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+
+volumes:
+  redis-cache-local-ms-retail-project:
+  postgres-local-db-ms-retail-project:
+  rabbitmq-data-ms-retail-project:
+  mongodb-data-ms-retail-project:
