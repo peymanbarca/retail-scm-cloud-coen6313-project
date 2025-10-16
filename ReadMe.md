@@ -1,6 +1,6 @@
-# Microservice Systems & LLM-Based Multi-Agent Systems Benchmarking
+# Cloud Native Microservice Systems for Retail SCM
 
-In this project, we're going to develop a Microservice (MS) and deploy in cloud.
+In this project, we're going to develop a Microservice system (MS) and deploy it in cloud.
 
 A case study for retail supply chain management is implemented.
 

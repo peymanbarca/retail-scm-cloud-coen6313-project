@@ -44,6 +44,5 @@ services:
 
 volumes:
   redis-cache-local-ms-retail-project:
-  postgres-local-db-ms-retail-project:
   rabbitmq-data-ms-retail-project:
   mongodb-data-ms-retail-project:
