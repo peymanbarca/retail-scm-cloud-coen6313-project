@@ -1,17 +1,35 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
+from typing import Literal
 import random
 import time
 
 app = FastAPI(title="Mock Payment Service")
 
 
-@app.post("/pay")
-def process_payment(request: dict):
-    order_id = request.get("order_id")
-    amount = request.get("amount", 0.0)
-    time.sleep(1)  # simulate processing delay
+# -----------------------------
+# Pydantic Schemas
+# -----------------------------
+class PaymentRequest(BaseModel):
+    order_id: str = Field(..., example="d02fdb40-c0df-4f44-8247-cedbce182b77")
+    amount: float = Field(..., gt=0, example=129.99)
 
-    # Randomly approve or reject
-    success = random.choice([True, True, True, False])
+
+class PaymentResponse(BaseModel):
+    order_id: str
+    amount: float
+    status: Literal["SUCCESS", "FAILED"]
+
+
+@app.post("/pay", response_model=PaymentResponse, summary="Process payment for an order")
+def process_payment(request: PaymentRequest):
+    """
+    Simulate a payment process.
+    - Randomly determines success (75% success rate by default)
+    """
+    time.sleep(1)
+
+    success = random.choices([True, False], weights=[3, 1])[0]  # 75% success
     status = "SUCCESS" if success else "FAILED"
-    return {"order_id": order_id, "amount": amount, "status": status}
+
+    return PaymentResponse(order_id=request.order_id, amount=request.amount, status=status)
