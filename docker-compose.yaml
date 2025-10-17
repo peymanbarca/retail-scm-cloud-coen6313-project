@@ -42,6 +42,28 @@ services:
       start_period: 30s
 
 
+  order_service:
+    image: grpcacr123.azurecr.io/order-service
+    container_name: order_service
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGO_URI=mongodb://user:pass1@mongodb:27017/
+      - INVENTORY_SERVICE_URL=http://inventory_service:8002
+    depends_on:
+      - mongodb
+
+  product_catalogue_service:
+    image: grpcacr123.azurecr.io/product-catalogue-service
+    container_name: product_catalogue_service
+    ports:
+      - "8004:8004"
+    environment:
+      - MONGO_URI=mongodb://user:pass1@mongodb:27017/
+    depends_on:
+      - mongodb
+
+
 volumes:
   redis-cache-local-ms-retail-project:
   rabbitmq-data-ms-retail-project:

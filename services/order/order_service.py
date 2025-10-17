@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from pymongo import MongoClient
 import requests, uuid
+import os
 
 app = FastAPI(title="Order Service")
-client = MongoClient("mongodb://user:pass1@localhost:27017/")
+mongo_uri = os.getenv("MONGO_URI", "mongodb://user:pass1@localhost:27017/")
+client = MongoClient(mongo_uri)
 db = client["retail"]
+
+inventory_service_url = os.getenv("INVENTORY_SERVICE_URL", "http://localhost:8002")
 
 
 @app.post("/clear_orders")
@@ -21,7 +25,7 @@ def create_order(request: dict):
     db.orders.insert_one({"_id": order_id, "item": item, "qty": qty, "status": "INIT"})
 
     # Call Inventory Service
-    r = requests.post("http://localhost:8002/reserve", json={"item": item, "qty": qty, "delay": delay})
+    r = requests.post(f"{inventory_service_url}/reserve", json={"item": item, "qty": qty, "delay": delay})
     res = r.json()
 
     if res["status"] == "reserved":
