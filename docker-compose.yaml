@@ -41,6 +41,21 @@ services:
       retries: 5
       start_period: 30s
 
+  payment_service:
+    image: grpcacr123.azurecr.io/payment-service
+    container_name: payment_service
+    ports:
+      - "8003:8003"
+
+  inventory_service:
+    image: grpcacr123.azurecr.io/inventory-service
+    container_name: inventory_service
+    ports:
+      - "8002:8002"
+    environment:
+      - MONGO_URI=mongodb://user:pass1@mongodb:27017/
+    depends_on:
+      - mongodb
 
   order_service:
     image: grpcacr123.azurecr.io/order-service
@@ -50,6 +65,7 @@ services:
     environment:
       - MONGO_URI=mongodb://user:pass1@mongodb:27017/
       - INVENTORY_SERVICE_URL=http://inventory_service:8002
+      - PAYMENT_SERVICE_URL=http://payment_service:8003
     depends_on:
       - mongodb
 
@@ -62,6 +78,16 @@ services:
       - MONGO_URI=mongodb://user:pass1@mongodb:27017/
     depends_on:
       - mongodb
+
+  gateway_service:
+    image: grpcacr123.azurecr.io/gateway-service
+    container_name: gateway_service
+    ports:
+      - "8000:8000"
+    environment:
+      - CATALOGUE_URL=http://product_catalogue_service:8004
+      - ORDER_SERVICE_URL=http://order_service:8001
+      - PAYMENT_URL=http://payment_service:8003
 
 
 volumes:

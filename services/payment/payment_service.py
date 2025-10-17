@@ -12,12 +12,10 @@ app = FastAPI(title="Mock Payment Service")
 # -----------------------------
 class PaymentRequest(BaseModel):
     order_id: str = Field(..., example="d02fdb40-c0df-4f44-8247-cedbce182b77")
-    amount: float = Field(..., gt=0, example=129.99)
 
 
 class PaymentResponse(BaseModel):
     order_id: str
-    amount: float
     status: Literal["SUCCESS", "FAILED"]
 
 
@@ -32,4 +30,4 @@ def process_payment(request: PaymentRequest):
     success = random.choices([True, False], weights=[3, 1])[0]  # 75% success
     status = "SUCCESS" if success else "FAILED"
 
-    return PaymentResponse(order_id=request.order_id, amount=request.amount, status=status)
+    return PaymentResponse(order_id=request.order_id, status=status)

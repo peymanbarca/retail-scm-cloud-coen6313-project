@@ -48,7 +48,7 @@ class StatusResponse(BaseModel):
     product_id: str
 
 
-@app.post("/add_product", response_model=StatusResponse, summary="Add a new product to the catalog")
+@app.post("/product", response_model=StatusResponse, summary="Add a new product to the catalog")
 def add_product(product: ProductIn):
     """
     Add a new product to the catalog, generate its embedding, and store it in MongoDB.

@@ -79,6 +79,21 @@ def reserve(request: ReserveRequest):
         return ReserveResponse(status="out_of_stock", reservation_id=None)
 
 
+@app.put("/rollback-reserve", response_model=ReserveResponse)
+def reserve(request: ReserveRequest):
+    """
+    Reserve stock for an order if available, otherwise mark as out of stock.
+    Optionally adds artificial delay (for latency testing).
+    """
+    stock_record = db.inventory.find_one({"product_id": request.product_id})
+    available = stock_record["stock"]
+    db.inventory.update_one(
+        {"product_id": request.product_id},
+        {"$inc": {"stock": +request.qty}},
+        upsert=True
+    )
+
+
 @app.get("/stock/{product_id}", response_model=StockStatusResponse)
 def get_stock(product_id: str):
     """

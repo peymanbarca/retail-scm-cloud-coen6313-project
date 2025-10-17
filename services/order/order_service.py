@@ -11,6 +11,7 @@ client = MongoClient(mongo_uri)
 db = client["retail"]
 
 INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL", "http://localhost:8002")
+PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://localhost:8003")
 
 
 # -----------------------------
@@ -36,13 +37,6 @@ class OrderResponse(BaseModel):
         "INIT", "RESERVED", "COMPLETED", "FAILED_OUT_OF_STOCK", "FAILED"
     ]
     reservation_id: Optional[str]
-
-
-@app.post("/clear_orders")
-def clear_orders():
-    """Delete all orders (for testing/demo reset)."""
-    db.orders.delete_many({})
-    return {"message": "All orders cleared"}
 
 
 @app.post("/order", response_model=OrderResponse)
@@ -79,10 +73,39 @@ def create_order(request: OrderCreateRequest):
     if status == "reserved":
         db.orders.update_one({"_id": order_id}, {"$set": {"status": OrderStatus.RESERVED}})
 
-        # Call Mock payment --> if success
-        db.orders.update_one({"_id": order_id}, {"$set": {"status": OrderStatus.COMPLETED}})
+        # Call Mock payment -->
+        try:
+            response = requests.post(
+                f"{PAYMENT_SERVICE_URL}/pay",
+                json={"order_id": order_id},
+                timeout=10
+            )
+            res = response.json()
+            payment_status = res.get("status")
+            if payment_status and payment_status == 'SUCCESS':
+                db.orders.update_one({"_id": order_id}, {"$set": {"status": OrderStatus.COMPLETED}})
+                final_status = OrderStatus.COMPLETED
+            else:
+                db.orders.update_one({"_id": order_id}, {"$set": {"status": OrderStatus.FAILED}})
+                final_status = OrderStatus.FAILED
 
-        final_status = OrderStatus.COMPLETED
+                # increase stock in inventory (can be asynchronous)
+                requests.put(
+                    f"{INVENTORY_SERVICE_URL}/rollback-reserve",
+                    json={"product_id": request.product_id, "qty": request.qty},
+                    timeout=10
+                )
+
+        except Exception as e:
+            db.orders.update_one({"_id": order_id}, {"$set": {"status": OrderStatus.FAILED}})
+            # increase stock in inventory (can be asynchronous)
+            requests.put(
+                f"{INVENTORY_SERVICE_URL}/rollback-reserve",
+                json={"product_id": request.product_id, "qty": request.qty},
+                timeout=10
+            )
+            raise HTTPException(status_code=503, detail=f"Inventory service error: {e}")
+
     elif status == "out_of_stock":
         db.orders.update_one({"_id": order_id}, {"$set": {"status": OrderStatus.FAILED_OUT_OF_STOCK}})
         final_status = OrderStatus.FAILED_OUT_OF_STOCK
