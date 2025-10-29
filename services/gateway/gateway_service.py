@@ -19,9 +19,27 @@ class PurchaseRequest(BaseModel):
     qty: int = Field(..., gt=0, example=2)
 
 
+class ProductIn(BaseModel):
+    name: str = Field(..., example="Wireless Headphones X1")
+    description: str = Field(..., example="Noise-cancelling over-ear headphones with 30h battery life")
+    price: float = Field(..., gt=0, example=129.99)
+
+
 class PurchaseResponse(BaseModel):
     order_id: str
     status: Literal["INIT", "RESERVED", "COMPLETED", "FAILED", "FAILED_OUT_OF_STOCK"]
+
+
+class StatusResponse(BaseModel):
+    status: str
+    product_id: str
+
+
+@app.post("/product", response_model=StatusResponse, summary="Add a new product to the catalog")
+def add_product(product: ProductIn):
+    r = requests.post(f"{CATALOGUE_URL}/product", json={'name': product.name, 'description': product.description,
+                                                        'price': product.price})
+    return r.json()
 
 
 @app.get("/search")
